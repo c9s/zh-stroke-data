@@ -49,6 +49,7 @@ $ ->
     word = $(this).val()
     strokeWords(word)
 
-  w = location.hash.replace /^#/, ""
-  $('#word').val(w) if w
+  if location.hash
+    w = unescape location.hash.replace /^#/, ""
+    $('#word').val(w) if w
   strokeWords($('#word').val())
