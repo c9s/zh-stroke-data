@@ -18,7 +18,9 @@ $ ->
           path.push [ "L", parseFloat(a.x.value) , parseFloat(a.y.value) ]
         when "QuadTo"
           path.push [ "Q", parseFloat(a.x1.value) , parseFloat(a.y1.value), parseFloat(a.x2.value), parseFloat(a.y2.value) ]
-    return paper.path(path).attr(pathAttrs).transform("s0.2,0.2,0,0")
+    outlineElement = paper.path(path).attr(pathAttrs).transform("s0.2,0.2,0,0")
+    # outlineElement.hover (-> this.transform("s0.3") ), (-> this.transform("s0.2") )
+    return outlineElement
 
   fetchStrokeXml = (code, cb) -> $.get "utf8/" + code.toLowerCase() + ".xml", cb, "xml"
 
