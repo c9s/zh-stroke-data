@@ -50,6 +50,6 @@ $ ->
     strokeWords(word)
 
   if location.hash
-    w = unescape location.hash.replace /^#/, ""
+    w = decodeURI location.hash.replace /^#/, ""
     $('#word').val(w) if w
   strokeWords($('#word').val())
