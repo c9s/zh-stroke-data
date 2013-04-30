@@ -34,12 +34,12 @@ $ ->
       color = Raphael.getColor()
       pathAttrs = { stroke: color, "stroke-width": 5, "stroke-linecap": "round", "fill": color, "opacity": 0.5 }
       timeoutSeconds = 0
-      delay = 400
+      delay = 800
       for outline in outlines
         do (outline) ->
           setTimeout (->
             outline = strokeOutline(paper, outline, pathAttrs)
-            outline.animate({ "opacity": 1 }, 400)
+            outline.animate({ "opacity": 1 }, delay)
           ), timeoutSeconds += delay
 
   strokeWords = (words) -> strokeWord(a) for a in words.split(//).reverse()
