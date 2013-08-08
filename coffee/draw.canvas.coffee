@@ -106,7 +106,10 @@ $ ->
     # did word stroked
     if this.currentStroke >= this.strokes.length
       setTimeout =>
-        this.promise.resolve()
+        this.promise.resolve {
+          remove: () =>
+            $(this.canvas).remove()
+        }
       , this.options.delays.word * 1000
     else
       if delay
