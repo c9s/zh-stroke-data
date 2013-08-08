@@ -9,6 +9,7 @@ $.fn.extend
 
     options = $.extend(
       svg: !isCanvasSupported()
+      single: false
     , options)
 
     this.each(() ->
@@ -16,13 +17,20 @@ $.fn.extend
         window.WordStroker.raphael.strokeWords this, words
       else
         promises = window.WordStroker.canvas.createWordsAndViews(this, words, options)
-        promises.forEach (p) ->
-          p.then (word) ->
-            word.drawBackground()
+        if not options.single
+          promises.forEach (p) ->
+            p.then (word) ->
+              word.drawBackground()
         i = 0
         next = ->
           if i < promises.length
-            promises[i++].then (word) -> word.draw().then next
+            promises[i++].then (word) ->
+              if options.single
+                word.drawBackground()
+              word.draw().then (word) ->
+                if options.single and i < promises.length
+                  word.remove()
+                next()
         next()
     ).data("strokeWords",
       play: null

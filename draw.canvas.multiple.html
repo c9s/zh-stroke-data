@@ -9,25 +9,15 @@
         <script src="raphael.js" type="text/javascript" charset="utf-8"></script>
         <script src="jquery-1.9.1.min.js" type="text/javascript" charset="utf-8"> </script>
         <script type="text/javascript" src="draw.canvas.js"> </script>
+        <script type="text/javascript" src="jquery.stroke-words.js"></script>
         <script type="text/javascript">
           $(document).ready(function() {
             $word = $("#word");
             $word.change(function() {
-              WordStroker.canvas.
-                createWordsAndViews($("#holder").get()[0], $word.val()).
-                forEach(function(p) {
-                  return p.then(function(word) {
-                    word.draw();
-                  });
-                });
+              $("#holder").html('');
+              $("#holder").strokeWords($word.val(), {svg: false, single: false});
             });
-            WordStroker.canvas.
-              createWordsAndViews($("#holder").get()[0], $word.val()).
-              forEach(function(p) {
-                return p.then(function(word) {
-                  word.draw();
-                });
-              });
+            $("#holder").strokeWords($word.val(), {svg: false, single: false});
           });
         </script>
     </head>
