@@ -15,14 +15,18 @@
             $word.change(function() {
               WordStroker.canvas.
                 createWordsAndViews($("#holder").get()[0], $word.val()).
-                forEach(function(word) {
-                  word.draw();
+                forEach(function(p) {
+                  return p.then(function(word) {
+                    word.draw();
+                  });
                 });
             });
             WordStroker.canvas.
               createWordsAndViews($("#holder").get()[0], $word.val()).
-              forEach(function(word) {
-                word.draw();
+              forEach(function(p) {
+                return p.then(function(word) {
+                  word.draw();
+                });
               });
           });
         </script>
