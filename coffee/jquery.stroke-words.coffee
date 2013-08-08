@@ -9,7 +9,7 @@ $.fn.extend
 
     options = $.extend(
       svg: !isCanvasSupported()
-      single: true
+      single: false
     , options)
 
     this.each(() ->
