@@ -1,19 +1,18 @@
 $ ->
-  fetchStrokeXml = (code, success, fail) ->
-    $.get("utf8/" + code.toLowerCase() + ".xml", success, "xml").fail(fail)
+  internalOptions =
+    dim: 2150
+    trackWidth: 150
 
   Word = (val, options) ->
     this.options = $.extend(
-      dim: 2150
       scales:
         fill: 0.4
         style: 0.25
-      trackWidth: 150
       updatesPerStep: 10 # speed, higher is faster
       delays:
         stroke: 0.25
         word: 0.5
-    , options)
+    , options, internalOptions)
     this.val = val
     this.utf8code = escape(val).replace(/%u/, "")
     this.strokes = []
@@ -74,7 +73,7 @@ $ ->
       this.vector =
         x: stroke.track[this.currentTrack + 1].x - stroke.track[this.currentTrack].x
         y: stroke.track[this.currentTrack + 1].y - stroke.track[this.currentTrack].y
-        size: stroke.track[this.currentTrack].size
+        size: stroke.track[this.currentTrack].size or this.options.trackWidth
       ctx.save()
       ctx.beginPath()
       pathOutline(ctx, stroke.outline, this.options.scales.fill)
@@ -162,78 +161,21 @@ $ ->
             path.end.y * scale
           )
 
-  parseOutline = (outline) ->
-    path = []
-    for node in outline.childNodes
-      continue if node.nodeType != 1
-      a = node.attributes
-      continue unless a
-      switch node.nodeName
-        when "MoveTo"
-          path.push
-            type: "M"
-            x: parseFloat a.x.value
-            y: parseFloat a.y.value
-        when "LineTo"
-          path.push
-            type: "L"
-            x: parseFloat a.x.value
-            y: parseFloat a.y.value
-        when "CubicTo"
-          path.push
-            type: "C"
-            begin:
-              x: parseFloat a.x1.value
-              y: parseFloat a.y1.value
-            mid:
-              x: parseFloat a.x2.value
-              y: parseFloat a.y2.value
-            end:
-              x: parseFloat a.x3.value
-              y: parseFloat a.y3.value
-        when "QuadTo"
-          path.push
-            type: "Q"
-            begin:
-              x: parseFloat a.x1.value
-              y: parseFloat a.y1.value
-            end:
-              x: parseFloat a.x2.value
-              y: parseFloat a.y2.value
-    path
-
-  parseTrack = (track, defaultWidth) ->
-    path = []
-    for node in track.childNodes
-      continue if node.nodeType != 1
-      a = node.attributes
-      continue unless a
-      switch node.nodeName
-        when "MoveTo"
-          path.push
-            x: parseFloat a.x.value
-            y: parseFloat a.y.value
-            size: if a.size then parseFloat(a.size.value) else defaultWidth
-    path
-
   createWordAndView = (element, val, options) ->
     promise = jQuery.Deferred()
     word = new Word(val, options)
     $(element).append word.canvas
-    fetchStrokeXml word.utf8code,
+    WordStroker.utils.fetchStrokeJSONFromXml(
+      "utf8/" + word.utf8code.toLowerCase() + ".xml",
       # success
-      (doc) ->
-        tracks = doc.getElementsByTagName "Track"
-        for outline, index in doc.getElementsByTagName 'Outline'
-          word.strokes.push
-            outline: parseOutline outline
-            track: parseTrack tracks[index], word.options.trackWidth
-          promise.resolve {
-            drawBackground: () ->
-              word.drawBackground()
-            draw: () ->
-              word.draw()
-          }
+      (json) ->
+        word.strokes = json
+        promise.resolve {
+          drawBackground: () ->
+            word.drawBackground()
+          draw: () ->
+            word.draw()
+        }
       # fail
       , ->
         promise.resolve {
@@ -244,6 +186,7 @@ $ ->
             $(word.canvas).fadeTo("fast", 0.5, -> p.resolve())
             p
         }
+    )
     promise
 
   createWordsAndViews = (element, words, options) ->
