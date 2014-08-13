@@ -19,6 +19,8 @@ $ ->
         stroke: 0.25
         word: 0.5
       progress: null
+      url: "./"
+      dataType: "json"
     , options, internalOptions)
     @matrix = [
       @options.scales.fill, 0,
@@ -177,44 +179,53 @@ $ ->
           )
 
   drawElementWithWord = (element, word, options) ->
-    promise = jQuery.Deferred()
+    options or= {}
     stroker = new Word(options)
     $word = $("<div class=\"word\"></div>")
-    $loader = $("<div class=\"loader\"><div style=\"width: 0\"></div></div>")
-    $word.append(stroker.canvas).append($loader)
+    $loader = $("<div class=\"loader\"><div style=\"width: 0\"></div><i class=\"icon-spinner icon-spin icon-large icon-fixed-width\"></i></div>")
+    $word.append stroker.canvas
     $(element).append $word
-    WordStroker.utils.StrokeData.get(
-      word.cp,
-      # success
-      (json) ->
-        $loader.remove()
-        promise.resolve {
-          drawBackground: ->
-            do stroker.drawBackground
-          draw: ->
-            stroker.draw json
-          remove: ->
-            do $(stroker.canvas).remove
-        }
-      # fail
-      , ->
-        $loader.remove()
-        promise.resolve {
-          drawBackground: ->
-            do stroker.drawBackground
-          draw: ->
-            p = jQuery.Deferred()
-            $(stroker.canvas).fadeTo("fast", 0.5, -> p.resolve())
-            p
-          remove: ->
-            do $(stroker.canvas).remove
-        }
-      , (e) ->
-        if e.lengthComputable
-          $loader.find("> div").css("width", e.loaded / e.total * 100 + "%")
-        promise.notifyWith e, [e, word.text]
-    )
-    promise
+    data = WordStroker.utils.StrokeData
+      url: options.url
+      dataType: options.dataType
+    pp = jQuery.Deferred()
+    return {
+      promise: pp
+      load: () ->
+        $word.append $loader
+        data.get(
+          word.cp,
+          # success
+          (json) ->
+            $loader.remove()
+            pp.resolve {
+              drawBackground: ->
+                do stroker.drawBackground
+              draw: ->
+                stroker.draw json
+              remove: ->
+                do $(stroker.canvas).remove
+            }
+          # fail
+          , ->
+            $loader.remove()
+            pp.resolve {
+              drawBackground: ->
+                do stroker.drawBackground
+              draw: ->
+                p = jQuery.Deferred()
+                $(stroker.canvas).fadeTo("fast", 0.5, -> p.resolve())
+                p
+              remove: ->
+                do $(stroker.canvas).remove
+            }
+          , (e) ->
+            if e.lengthComputable
+              $loader.find("> div").css("width", e.loaded / e.total * 100 + "%")
+            pp.notifyWith e, [e, word.text]
+        )
+        pp
+    }
 
   drawElementWithWords = (element, words, options) ->
     WordStroker.utils.sortSurrogates(words).map (word) ->
