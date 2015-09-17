@@ -3,6 +3,7 @@ use utf8;
 use 5.12.0;
 use File::Copy;
 use Encode qw(from_to decode encode);
+use File::Copy;
 
 binmode STDOUT, ":utf8";
 
@@ -15,6 +16,6 @@ for my $file ( @files ) {
         my $word = decode('big5',$a);
         my $utf8 = sprintf "%x",(unpack "U", $word);
         print $utf8, " <= ", $word,"($code)", "\n";
-        copy $file , "utf8/$utf8.xml" unless -e "utf8/$utf8.xml";
+        File::Copy::copy $file => "utf8/$utf8.xml";
     }
 }

@@ -1,7 +1,7 @@
 package main
 import "fmt"
 import "net/http"
-import "log"
+//import "log"
 import "io/ioutil"
 import "os"
 import "path"
@@ -9,9 +9,9 @@ import "strings"
 import "runtime"
 import "time"
 
-const DELAY = 1500
-const BASEDIR = "data"
-const XMLBASEURL = "http://stroke-order.learningweb.moe.edu.tw/provideStrokeInfo.do?big5="
+const baseDir = "data"
+const xmlBaseUrl = "http://stroke-order.learningweb.moe.edu.tw/provideStrokeInfo.do?big5="
+const bpmfXmlBaseUrl = "http://stroke-order.learningweb.moe.edu.tw/provideStrokeInfo.do?bpm="
 const imageBaseUrl = "http://stroke-order.learningweb.moe.edu.tw/showWordImage.do?big5="
 
 
@@ -29,11 +29,20 @@ func fetchUrl(url string) (*[]byte, error) {
 }
 
 func fetchStrokeXml(code int) {
-	hex := fmt.Sprintf("%x",code)
-	url := XMLBASEURL + hex
-	filename := path.Join( BASEDIR, hex + ".xml" )
+	var url,filename string
+	hex := fmt.Sprintf("%x", code)
 
+	if (0xA374 <= code && code <= 0xA37E) {
+		url = bpmfXmlBaseUrl + fmt.Sprintf("%d", code - 0xA374 + 1)
+	} else if (0xA3A1 <= code && code <= 0xA3BA) {
+		url = bpmfXmlBaseUrl + fmt.Sprintf("%d", code - 0xA3A1 + 12)
+	} else {
+		url = xmlBaseUrl + hex
+	}
+
+	filename = path.Join( baseDir, hex + ".xml" )
 	fi, err := os.Stat(filename)
+
 	if fi != nil {
 		fmt.Print("-")
 		return
@@ -42,7 +51,8 @@ func fetchStrokeXml(code int) {
 	time.Sleep(DELAY * time.Millisecond)
 	xmlContentP, err := fetchUrl(url)
 	if err != nil {
-		log.Println(err)
+		//log.Println(err)
+		fmt.Print("!")
 		return
 	}
 
@@ -56,6 +66,7 @@ func fetchStrokeXml(code int) {
 
 	// filename string, data []byte, perm os.FileMode
 	fmt.Print(".")
+
 	ioutil.WriteFile(filename, xmlContent, 0666)
 }
 
@@ -78,17 +89,31 @@ func main() {
 		go worker(in, done)
 	}
 
+	// 0xA374-0XA37E
+	// 0xA3A1-0xA3BA for Bopomofo
 	// 0xA440-0xC67E
 	// 0xC940-0xF9D5
 	os.Mkdir(BASEDIR, 0777)
 
-	for code := 0xa440 ; code < 0xc67e ; code++ {
+	for code := 0xa374 ; code <= 0xa37e ; code++ {
+		in <- code
+	}
+
+	for code := 0xa3a1 ; code <= 0xa3ba ; code++ {
+		in <- code
+	}
+
+	for code := 0xa440 ; code <= 0xc67e ; code++ {
+		in <- code
+	}
+
+	for code := 0xc940 ; code <= 0xf9d5 ; code++ {
 		in <- code
 	}
 
 	for i := 0 ; i < runtime.NumCPU() ; i++ {
 		in <- 0
 		<-done
-		fmt.Printf("goroutine %d finished\n", i)
+		fmt.Printf("\ngoroutine %d finished\n", i)
 	}
 }
